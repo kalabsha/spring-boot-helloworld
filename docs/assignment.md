@@ -1,17 +1,17 @@
 # Assignment
 
-1. Install Docker.io on your local PC. DONE
-1. Fork above repo to your own GitHub (Create a GitHub account if you don't have yet). DONE
-1. Create a Dockerfile with two stages, the first stage compiles code and output a jar file, the second stage run the jar and expose the service with 8080 port. DONE
-1. Test Docker build and run locally. DONE
+1. Install Docker.io on your local PC.
+1. Fork above repo to your own GitHub (Create a GitHub account if you don't have yet).
+1. Create a Dockerfile with two stages, the first stage compiles code and output a jar file, the second stage run the jar and expose the service with 8080 port.
+1. Test Docker build and run locally.
 1. Push the Dockerfile to your forked repo with a proper commit message.
 1. Choose a CI/CD tool you are familiar with and automate above build process.
 
 # Installations
 
-## Docker Installation
-https://docs.docker.com/engine/install/
-https://docs.docker.com/engine/install/linux-postinstall/
+## [Docker Installation](https://docs.docker.com/engine/install/)
+
+- [Post configuration](https://docs.docker.com/engine/install/linux-postinstall/)
 
 ```json
 # /etc/docker/daemon.json
@@ -29,8 +29,7 @@ https://docs.docker.com/engine/install/linux-postinstall/
 ```
 
 
-## GitLab Installation
-https://docs.gitlab.com/ee/install/docker.html
+## [GitLab Installation](https://docs.gitlab.com/ee/install/docker.html)
 
 ```bash
 export GITLAB_HOME=$HOME/gitlab
@@ -48,7 +47,7 @@ docker run --detach \
 echo "127.0.0.1 gitlab.example.com" | sudo tee -a /etc/hosts
 ```
 
-## Gitlab Runner Installation
+## [Gitlab Runner Installation](https://docs.gitlab.com/runner/install/)
 
 ```bash
 docker run -d --name gitlab-runner --restart always \
@@ -57,8 +56,7 @@ docker run -d --name gitlab-runner --restart always \
   gitlab/gitlab-runner:alpine-v15.5.0
 ```
 
-## Minikube Installation
-https://minikube.sigs.k8s.io/docs/start/
+## [Minikube Installation](https://minikube.sigs.k8s.io/docs/start/)
 
 ```bash
 curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
@@ -73,27 +71,27 @@ There are a few methods to do the job.
 1. Clone to local from bitbucket.org, then push to GitHub.
     1. Create a project on GitHub
     1. Clone the repo to local, add GitHub as another remote, then push it
-    ```bash
-    # Clone the sample repo to local dirctory
-    cd ~/Code
-    git clone git@bitbucket.org:joelyen/spring-boot-helloworld
-
-    # Check the remote settings
-    cd spring-boot-helloworld
-    git remote -v
-    origin  git@bitbucket.org:joelyen/spring-boot-helloworld.git (fetch)
-    origin  git@bitbucket.org:joelyen/spring-boot-helloworld.git (push)
-
-    git remote add github git@github.com:kalabsha/spring-boot-helloworld.git
-
-    git remote -v
-    github  git@github.com:kalabsha/spring-boot-helloworld.git (fetch)
-    github  git@github.com:kalabsha/spring-boot-helloworld.git (push)
-    origin  git@bitbucket.org:joelyen/spring-boot-helloworld.git (fetch)
-    origin  git@bitbucket.org:joelyen/spring-boot-helloworld.git (push)
-    ```
+       ```bash
+       # Clone the sample repo to local dirctory
+       cd ~/Code
+       git clone git@bitbucket.org:joelyen/spring-boot-helloworld
+   
+       # Check the remote settings
+       cd spring-boot-helloworld
+       git remote -v
+       origin  git@bitbucket.org:joelyen/spring-boot-helloworld.git (fetch)
+       origin  git@bitbucket.org:joelyen/spring-boot-helloworld.git (push)
+   
+       git remote add github git@github.com:kalabsha/spring-boot-helloworld.git
+   
+       git remote -v
+       github  git@github.com:kalabsha/spring-boot-helloworld.git (fetch)
+       github  git@github.com:kalabsha/spring-boot-helloworld.git (push)
+       origin  git@bitbucket.org:joelyen/spring-boot-helloworld.git (fetch)
+       origin  git@bitbucket.org:joelyen/spring-boot-helloworld.git (push)
+       ```
     
-# Dockerlize the Spring-boot Project
+# Dockerize the Spring-boot Project
 
 First of all, I replace the repo mirrors to speed up the download, this could save us some time while building the docker image.
 
@@ -105,15 +103,15 @@ Then we use a non-root user, `demo` in this case, to precaution limits their cap
 
 Finally, we will get a docker image with the following commands:
 
-    ```bash
-    # Make sure we are at ~/Code/spring-boot-helloworld
-    $ DOCKER_BUILDKIT=1 docker build -t spring-boot/hello:v0.0.1 .
+```bash
+# Make sure we are at ~/Code/spring-boot-helloworld
+$ DOCKER_BUILDKIT=1 docker build -t spring-boot/hello:v0.0.1 .
 
-    $ docker images
-    REPOSITORY             TAG                IMAGE ID       CREATED         SIZE
-    spring-boot/hello      v0.0.1             9ff41bc2b816   3 hours ago     207MB
-    ......
-    ```
+$ docker images
+REPOSITORY             TAG                IMAGE ID       CREATED         SIZE
+spring-boot/hello      v0.0.1             9ff41bc2b816   3 hours ago     207MB
+......
+```
 
 # CI/CD
 
