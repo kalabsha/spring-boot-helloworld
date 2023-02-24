@@ -7,11 +7,9 @@
 1. Push the Dockerfile to your forked repo with a proper commit message.
 1. Choose a CI/CD tool you are familiar with and automate above build process.
 
-# Installations
+## Docker Installation
 
-## [Docker Installation](https://docs.docker.com/engine/install/)
-
-- [Post configuration](https://docs.docker.com/engine/install/linux-postinstall/)
+With the friendly [official instructions](https://docs.docker.com/engine/install/), we can install Docker Engine on a modern Linux distribution easily. It is good to know that the [post configuration](https://docs.docker.com/engine/install/linux-postinstall/) could be of help sometimes. For example, we use `registry-mirrors` to speed up the `docker pull` progress.
 
 ```json
 # /etc/docker/daemon.json
@@ -29,7 +27,110 @@
 ```
 
 
-## [GitLab Installation](https://docs.gitlab.com/ee/install/docker.html)
+## Fork/Clone/Import the spring-boot-helloworld Project to GitHub
+
+There are a few methods to do the job.
+
+### Method 1. Using GitHub Import the repository
+
+Click the GitHub [Import the repository](https://github.com/new/import), fill in the text box with the given [bitbucket repo link](https://bitbucket.org/joelyen/spring-boot-helloworld), then follow the instructions.
+
+
+### Method 2. Clone to local from bitbucket.org, then push to GitHub
+
+1. Create a project on GitHub
+1. Clone the repo to local, add GitHub as another remote, then push it to the new remote
+    ```bash
+    # Clone the sample repo to local dirctory
+    cd ~/Code
+    git clone git@bitbucket.org:joelyen/spring-boot-helloworld
+
+    # Check the remote settings
+    cd spring-boot-helloworld
+    git remote -v
+      origin  git@bitbucket.org:joelyen/spring-boot-helloworld.git (fetch)
+      origin  git@bitbucket.org:joelyen/spring-boot-helloworld.git (push)
+
+    git remote add github git@github.com:kalabsha/spring-boot-helloworld.git
+
+    # Finally, the remote settings should be like this
+    git remote -v
+      github  git@github.com:kalabsha/spring-boot-helloworld.git (fetch)
+      github  git@github.com:kalabsha/spring-boot-helloworld.git (push)
+      origin  git@bitbucket.org:joelyen/spring-boot-helloworld.git (fetch)
+      origin  git@bitbucket.org:joelyen/spring-boot-helloworld.git (push)
+    ```
+    
+## Dockerize the Spring-boot Project
+
+First of all, I replace the repo mirrors to speed up the download, this could save us some time while building the docker image.
+
+By following the [Official Tutorials](https://spring.io/guides/topicals/spring-boot-docker/), we get a basic Dockerfile with multi-stage build.
+
+~~Here in this example, taking the advice from [This Blog Post](https://blogs.oracle.com/javamagazine/post/its-time-to-move-your-applications-to-java-17-heres-why-and-heres-how), I upgrade the JDK version from 1.8 to 17, therefore, we need append more dependencies to the pom.xml file.~~ With the reference to this [GitLab Blog](https://about.gitlab.com/blog/2016/12/14/continuous-delivery-of-a-spring-boot-application-with-gitlab-ci-and-kubernetes/)
+, we use the latest JDK 8 with the base image `maven:3.9.0-eclipse-temurin-8-alpine` at last. And by using the `eclipse-temurin:8-jre-alpine` docker base image in the second stage, we get a smaller image as a result.
+
+Then we use a non-root user, `demo` in this case, to precaution limits the capabilities by following the principle of least privilege.
+
+Finally, we will get a docker image with the following commands:
+
+```bash
+# Make sure we are at ~/Code/spring-boot-helloworld
+$ DOCKER_BUILDKIT=1 docker build -t spring-boot/hello:v0.0.1 .
+
+$ docker images
+REPOSITORY             TAG                IMAGE ID       CREATED         SIZE
+spring-boot/hello      v0.0.1             9ff41bc2b816   3 hours ago     207MB
+......
+```
+
+## Test Docker build and run locally
+
+1. Run up the built docker image, by publish the port 8080 to the HOST
+
+    ```
+    $ docker run --rm -p 8080:8080 spring-boot/hello:v0.0.1                                                                               
+                                                                                                                                          
+      .   ____          _            __ _ _                                                                                               
+    /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \                                                                                              
+    ( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \                                                                                             
+    \\/  ___)| |_)| | | | | || (_| |  ) ) ) )                                                                                            
+      '  |____| .__|_| |_|_| |_\__, | / / / /                                                                                             
+    =========|_|==============|___/=/_/_/_/                                                                                              
+    :: Spring Boot ::        (v2.1.2.RELEASE)                                                                                            
+                                                                                                                                          
+    2023-02-24 13:56:24.099  INFO 1 --- [           main] de.ykoer.examples.hello.Application      : Starting Application v0.0.1-SNAPSHOT 
+    on 45034c0a6e6b with PID 1 (/workspace/app/helloworld.jar started by demo in /workspace/app)                                          
+
+    ...
+
+    2023-02-24 13:56:26.710  INFO 1 --- [           main] de.ykoer.examples.hello.Application      : Started Application in 2.961 seconds 
+    (JVM running for 3.293)
+
+    ```
+
+1. Access the service by using `curl`：
+
+    ```bash
+    $ curl localhost:8080/ping
+    Hello World! It is wonderful!
+    ```
+
+    >The output here is _Hello World! It is wonderful!_ while we build the docker image with `mvn install -DskipTests`. 
+
+
+## Push the Dockerfile to your forked repo with a proper commit message
+
+In fact, I checkout to the `dev` branch from the begining of the development, so now we can push the Dockerfile to the remote GitHub repository, and then use `Pull Request` to merge it to the `master` branch.
+
+
+# CI/CD
+
+I am more familiar with GitLab as the CI tool. So we use GitLab and Kubernetes for this task. All the work are done locally.
+
+## Preparations
+
+### [GitLab Installation](https://docs.gitlab.com/ee/install/docker.html)
 
 ```bash
 export GITLAB_HOME=$HOME/gitlab
@@ -47,7 +148,7 @@ docker run --detach \
 echo "127.0.0.1 gitlab.example.com" | sudo tee -a /etc/hosts
 ```
 
-## [Gitlab Runner Installation](https://docs.gitlab.com/runner/install/)
+### [Gitlab Runner Installation](https://docs.gitlab.com/runner/install/)
 
 ```bash
 docker run -d --name gitlab-runner --restart always \
@@ -56,69 +157,14 @@ docker run -d --name gitlab-runner --restart always \
   gitlab/gitlab-runner:alpine-v15.5.0
 ```
 
-## [Minikube Installation](https://minikube.sigs.k8s.io/docs/start/)
+### [Minikube Installation](https://minikube.sigs.k8s.io/docs/start/)
 
 ```bash
 curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
 sudo install minikube-linux-amd64 /usr/local/bin/minikube
 ```
 
-# Fork/Clone/Import the spring-boot-helloworld Project to GitHub
-There are a few methods to do the job.
-
-1. [Import the repository](https://github.com/new/import), fill in the url with the [bitbucket repo link](https://bitbucket.org/joelyen/spring-boot-helloworld/src/master/)
-
-1. Clone to local from bitbucket.org, then push to GitHub.
-    1. Create a project on GitHub
-    1. Clone the repo to local, add GitHub as another remote, then push it
-       ```bash
-       # Clone the sample repo to local dirctory
-       cd ~/Code
-       git clone git@bitbucket.org:joelyen/spring-boot-helloworld
-   
-       # Check the remote settings
-       cd spring-boot-helloworld
-       git remote -v
-       origin  git@bitbucket.org:joelyen/spring-boot-helloworld.git (fetch)
-       origin  git@bitbucket.org:joelyen/spring-boot-helloworld.git (push)
-   
-       git remote add github git@github.com:kalabsha/spring-boot-helloworld.git
-   
-       git remote -v
-       github  git@github.com:kalabsha/spring-boot-helloworld.git (fetch)
-       github  git@github.com:kalabsha/spring-boot-helloworld.git (push)
-       origin  git@bitbucket.org:joelyen/spring-boot-helloworld.git (fetch)
-       origin  git@bitbucket.org:joelyen/spring-boot-helloworld.git (push)
-       ```
-    
-# Dockerize the Spring-boot Project
-
-First of all, I replace the repo mirrors to speed up the download, this could save us some time while building the docker image.
-
-By following the [Official Tutorials](https://spring.io/guides/topicals/spring-boot-docker/), we get a basic Dockerfile with multi-stage build.
-
-Here in this example, taking the advice from [This Blog Post](https://blogs.oracle.com/javamagazine/post/its-time-to-move-your-applications-to-java-17-heres-why-and-heres-how), I upgrade the JDK version from 1.8 to 17, therefore, we need append more dependencies to the pom.xml file. And by using the `jre` docker base image in the second stage, we get a smaller image as a result.
-
-Then we use a non-root user, `demo` in this case, to precaution limits their capabilities by following the principle of least privilege.
-
-Finally, we will get a docker image with the following commands:
-
-```bash
-# Make sure we are at ~/Code/spring-boot-helloworld
-$ DOCKER_BUILDKIT=1 docker build -t spring-boot/hello:v0.0.1 .
-
-$ docker images
-REPOSITORY             TAG                IMAGE ID       CREATED         SIZE
-spring-boot/hello      v0.0.1             9ff41bc2b816   3 hours ago     207MB
-......
-```
-
-# CI/CD
-
-[GitLab CI/CD Workflow](https://docs.gitlab.com/ee/user/clusters/agent/ci_cd_workflow.html)
-
-[GitLab Blog](https://about.gitlab.com/blog/2016/12/14/continuous-delivery-of-a-spring-boot-application-with-gitlab-ci-and-kubernetes/)
-
+## Continues Integration with GitLab
 
 ## [Deploy the Application to Kubernetes](https://spring.io/guides/gs/spring-boot-kubernetes/)
 
@@ -127,3 +173,15 @@ $ kubectl create deployment helloworld --image=spring-boot/hello --dry-run -o=ya
 $ echo --- >> deployment.yaml
 $ kubectl create service clusterip helloworld --tcp=8080:8080 --dry-run -o=yaml >> deployment.yaml
 ```
+
+
+---
+
+## References:
+
+- [Docker Official Documents](https://docs.docker.com/engine/install/)
+- [Spring Boot Tutorials: Docker](https://spring.io/guides/topicals/spring-boot-docker/)
+- [GitLab Installation Instructions](https://docs.gitlab.com/ee/install/docker.html)
+- [GitLab CI/CD Workflow](https://docs.gitlab.com/ee/user/clusters/agent/ci_cd_workflow.html)
+- [GitLab Blog: Spring Boot Application CI/CD](https://about.gitlab.com/blog/2016/12/14/continuous-delivery-of-a-spring-boot-application-with-gitlab-ci-and-kubernetes/)
+- [Spring Boot Tutorials: Kubernetes](https://spring.io/guides/gs/spring-boot-kubernetes/)
