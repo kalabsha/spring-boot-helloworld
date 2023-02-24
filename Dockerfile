@@ -8,13 +8,11 @@
 FROM maven:3.9.0-eclipse-temurin-8-alpine as build
 WORKDIR /workspace/app
 
-# COPY mvnw .
-# COPY .mvn .mvn
 COPY pom.xml .
 COPY src src
 COPY configuration configuration
 
-RUN --mount=type=cache,target=/root/.m2 mvn -s ./configuration/settings.xml install -DskipTests
+RUN --mount=type=cache,target=/root/.m2 mvn -s ./configuration/settings.xml package -B
 
 FROM eclipse-temurin:8-jre-alpine
 
