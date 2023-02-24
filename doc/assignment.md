@@ -121,3 +121,11 @@ Finally, we will get a docker image with the following commands:
 
 [GitLab Blog](https://about.gitlab.com/blog/2016/12/14/continuous-delivery-of-a-spring-boot-application-with-gitlab-ci-and-kubernetes/)
 
+
+## [Deploy the Application to Kubernetes](https://spring.io/guides/gs/spring-boot-kubernetes/)
+
+```bash
+$ kubectl create deployment helloworld --image=spring-boot/hello --dry-run -o=yaml > deployment.yaml
+$ echo --- >> deployment.yaml
+$ kubectl create service clusterip helloworld --tcp=8080:8080 --dry-run -o=yaml >> deployment.yaml
+```
