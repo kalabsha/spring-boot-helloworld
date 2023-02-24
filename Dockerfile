@@ -15,23 +15,18 @@ COPY src src
 COPY configuration configuration
 
 RUN --mount=type=cache,target=/root/.m2 ./mvnw -s ./configuration/settings.xml install -DskipTests
-# RUN mkdir -p target/dependency && (cd target/dependency; jar -xf ../*.jar)
 
 FROM eclipse-temurin:17-jre-alpine
 
-# VOLUME /tmp
+RUN addgroup -S demo && adduser -S demo -G demo
+
 WORKDIR /workspace/app
 
 ARG TARGET_PATH=/workspace/app/target
-# ARG DEPENDENCY=/workspace/app/target/dependency
-
-# COPY --from=build ${DEPENDENCY}/BOOT-INF/lib /app/lib
-# COPY --from=build ${DEPENDENCY}/META-INF /app/META-INF
-# COPY --from=build ${DEPENDENCY}/BOOT-INF/classes /app
 
 COPY --from=build ${TARGET_PATH}/*.jar helloworld.jar
 
+USER demo
 
 EXPOSE 8080
-# ENTRYPOINT ["java","-cp","app:app/lib/*","hello.Application"]
 ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -jar helloworld.jar"]
