@@ -1,3 +1,6 @@
 # spring-boot-helloworld
 
-see the [details](./assignment.md)
+- [Assignment](./assignment.md)
+- [On DevOps](./devops.md)
+- [On Git Flow](./git-flow.md)
+- [On CI/CD](./ci-cd.md)
