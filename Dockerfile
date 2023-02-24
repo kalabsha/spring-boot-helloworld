@@ -4,6 +4,7 @@
 
 # https://spring.io/guides/topicals/spring-boot-docker/
 
+# syntax=docker/dockerfile:experimental
 FROM eclipse-temurin:17-jdk-alpine as build
 WORKDIR /workspace/app
 
@@ -13,6 +14,7 @@ COPY pom.xml .
 COPY src src
 COPY configuration configuration
 
+RUN --mount=type=cache,target=/root/.m2 ./mvnw -s ./configuration/settings.xml install -DskipTests
 # RUN mkdir -p target/dependency && (cd target/dependency; jar -xf ../*.jar)
 
 FROM eclipse-temurin:17-jre-alpine
