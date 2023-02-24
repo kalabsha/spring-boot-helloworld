@@ -5,18 +5,18 @@
 # https://spring.io/guides/topicals/spring-boot-docker/
 
 # syntax=docker/dockerfile:experimental
-FROM eclipse-temurin:17-jdk-alpine as build
+FROM maven:3.9.0-eclipse-temurin-8-alpine as build
 WORKDIR /workspace/app
 
-COPY mvnw .
-COPY .mvn .mvn
+# COPY mvnw .
+# COPY .mvn .mvn
 COPY pom.xml .
 COPY src src
 COPY configuration configuration
 
-RUN --mount=type=cache,target=/root/.m2 ./mvnw -s ./configuration/settings.xml install -DskipTests
+RUN --mount=type=cache,target=/root/.m2 mvn -s ./configuration/settings.xml install -DskipTests
 
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:8-jre-alpine
 
 RUN addgroup -S demo && adduser -S demo -G demo
 
