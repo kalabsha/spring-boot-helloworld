@@ -13,7 +13,7 @@ public class HelloWorldController {
             value = "/ping"
     )
     public String ping() {
-        return "Hello World! It is wonderful!";
+        return "Hello World!";
     }
 
 
