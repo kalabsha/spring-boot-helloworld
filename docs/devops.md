@@ -1,6 +1,6 @@
 # What are the core DevOps responsibilities we normally carry?
 
-When it comes to DevOps, we always picture the inifinity symbol in our minds. It contains Dev, Build, Test, Deploy, Monitor as the main steps for a CI/CD pipeline. As a DevOps Engineer, we're CI/CD oriented and we take responsibilities in each step of the pipeline.
+When it comes to DevOps, we always picture the infinity symbol in our minds. It contains Dev, Build, Test, Deploy, Monitor as the main steps for a CI/CD pipeline. As a DevOps Engineer, we're CI/CD oriented and we take responsibilities in each step of the pipeline.
 
 From my point of view, the core DevOps responsibilities we normally carry are:
 
