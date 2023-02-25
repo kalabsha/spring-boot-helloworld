@@ -1,0 +1,54 @@
+image: docker:$DOCKER_VERSION
+services:
+  - docker:$DOCKER_VERSION
+
+variables:
+  REGISTRY_URL: registry.demo.com
+  DOCKER_IMAGE: spring-boot/hello
+  SERVICE_URL: http://localhost:8080/ping
+  TEST_RESULT: 'Hello World!'
+  # CI_BUILD_TOKEN: THIS TOKEN STORES IN GITLAB SETTINGS
+
+stages:
+  - build
+  - test
+  - deploy
+
+docker-image-build:
+  stage: build
+  only:
+  - dev
+  - master
+  tags:
+  - spring-boot
+  script:
+  # - echo "Docker image Building..."
+  - docker build -t $REGISTRY_URL/$DOCKER_IMAGE .
+  - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $REGISTRY_URL
+  - docker push $REGISTRY_URL/$DOCKER_IMAGE
+
+spring-boot-test:
+  stage: test
+  only:
+  - dev
+  - master
+  tags:
+  - spring-boot
+  script:
+  # - echo "Docker image Building..."
+  # - curl $SERVICE_URL && echo yes || echo no
+  - if [[ $(curl $SERVICE_URL) = $TEST_RESULT ]]; then echo PASS else echo FAIL && exit 1;fi
+
+k8s-deploy:
+  stage: deploy
+  only:
+  - dev
+  - master
+  tags:
+  - spring-boot
+  image: $DOCKER_IMAGE
+  script:
+  # - echo "Deploying..."
+  - kubectl delete secret $REGISTRY_URL
+  - kubectl create secret docker-registry $REGISTRY_URL --docker-server=$REGISTRY_URL --docker-username=$REGISTRY_USER --docker-password=$REGISTRY_PASSWD
+  - kubectl apply -f deployment.yml
