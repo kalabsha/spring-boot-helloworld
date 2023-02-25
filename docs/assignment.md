@@ -76,11 +76,11 @@ Finally, we will get a docker image with the following commands:
 
 ```bash
 # Make sure we are at ~/Code/spring-boot-helloworld
-$ DOCKER_BUILDKIT=1 docker build -t spring-boot/hello:v0.0.1 .
+$ DOCKER_BUILDKIT=1 docker build -t spring-boot/helloworld:v0.0.1 .
 
 $ docker images
-REPOSITORY             TAG                IMAGE ID       CREATED         SIZE
-spring-boot/hello      v0.0.1             9ff41bc2b816   3 hours ago     207MB
+REPOSITORY                  TAG                IMAGE ID       CREATED         SIZE
+spring-boot/helloworld      v0.0.1             9ff41bc2b816   3 hours ago     175MB
 ......
 ```
 
@@ -89,7 +89,7 @@ spring-boot/hello      v0.0.1             9ff41bc2b816   3 hours ago     207MB
 1. Run up the built docker image, by publish the port 8080 to the HOST
 
     ```
-    $ docker run --rm -p 8080:8080 spring-boot/hello:v0.0.1                                                                               
+    $ docker run --rm -p 8080:8080 spring-boot/helloworld:v0.0.1                                                                               
                                                                                                                                           
       .   ____          _            __ _ _                                                                                               
     /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \                                                                                              
@@ -121,12 +121,19 @@ spring-boot/hello      v0.0.1             9ff41bc2b816   3 hours ago     207MB
 
 ## Push the Dockerfile to your forked repo with a proper commit message
 
-In fact, I checkout to the `dev` branch from the begining of the development, so now we can push the Dockerfile to the remote GitHub repository, and then use `Pull Request` to merge it to the `master` branch.
+In fact, I checkout to the `dev` branch from the begining of the development, so now we can push the Dockerfile to the remote GitHub repository, and then use **Pull Request** to merge it to the `master` branch. see the [PR](https://github.com/kalabsha/spring-boot-helloworld/pull/1).
 
 
 # CI/CD
 
-I am more familiar with GitLab as the CI tool. So we use GitLab and Kubernetes for this task. All the work are done locally.
+I am more familiar with GitLab as the CI tool. So I use GitLab and Kubernetes for this task. All the work is done locally. Here are the main steps:
+
+1. Set up a Registry for hosting built docker images
+1. Set up a Kubernetes Cluster
+1. Set up a hosted GitLab Server and store the Registry username and password as variables
+1. Create a GitLab account for the CI user, store user token as variables in CI/CD settings
+1. Set up a GitLab Runner, and make sure it is registered to the GitLab server with a proper tag name, `spring-boot` for example in this case, and has the proper permissions to access the Kubernetes cluster
+1. Create a `.gitlab-ci.yml` and `deployment.yml` for CI/CD in the root directory of the project
 
 ## Preparations
 
@@ -164,9 +171,7 @@ curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-
 sudo install minikube-linux-amd64 /usr/local/bin/minikube
 ```
 
-## Continues Integration with GitLab
-
-## [Deploy the Application to Kubernetes](https://spring.io/guides/gs/spring-boot-kubernetes/)
+## [Create Kubernetes Deployment](https://spring.io/guides/gs/spring-boot-kubernetes/)
 
 ```bash
 $ kubectl create deployment helloworld --image=spring-boot/hello --dry-run -o=yaml > deployment.yaml
@@ -174,6 +179,65 @@ $ echo --- >> deployment.yaml
 $ kubectl create service clusterip helloworld --tcp=8080:8080 --dry-run -o=yaml >> deployment.yaml
 ```
 
+## Continues Integration and Deployment with GitLab
+
+```bash
+# .gitlab-ci.yml
+image: docker:$DOCKER_VERSION
+services:
+  - docker:$DOCKER_VERSION
+
+variables:
+  REGISTRY_URL: registry.demo.com
+  DOCKER_IMAGE: spring-boot/helloworld
+  SERVICE_URL: http://localhost:8080/ping
+  TEST_RESULT: 'Hello World!'
+  # CI_BUILD_TOKEN: THIS TOKEN STORES IN GITLAB SETTINGS
+
+stages:
+  - build
+  - test
+  - deploy
+
+docker-image-build:
+  stage: build
+  only:
+  - dev
+  - master
+  tags:
+  - spring-boot
+  script:
+  # - echo "Docker image Building..."
+  - docker build -t $REGISTRY_URL/$DOCKER_IMAGE .
+  - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $REGISTRY_URL
+  - docker push $REGISTRY_URL/$DOCKER_IMAGE
+
+spring-boot-test:
+  stage: test
+  only:
+  - dev
+  - master
+  tags:
+  - spring-boot
+  script:
+  # - echo "Docker image Building..."
+  # - curl $SERVICE_URL && echo yes || echo no
+  - if [[ $(curl $SERVICE_URL) = $TEST_RESULT ]]; then echo PASS else echo FAIL && exit 1;fi
+
+k8s-deploy:
+  stage: deploy
+  only:
+  - dev
+  - master
+  tags:
+  - spring-boot
+  image: $DOCKER_IMAGE
+  script:
+  # - echo "Deploying..."
+  - kubectl delete secret $REGISTRY_URL
+  - kubectl create secret docker-registry $REGISTRY_URL --docker-server=$REGISTRY_URL --docker-username=$REGISTRY_USER --docker-password=$REGISTRY_PASSWD
+  - kubectl apply -f deployment.yml
+```
 
 ---
 
